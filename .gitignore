@@ -379,4 +379,3 @@ CMakeSettings.json
 # Downloaded third-party dependencies (not committed)
 /3rdparty/ffmpeg-master-latest-win64-gpl-shared/
 /3rdparty/nlohmann/
-/CMakeLists.txt

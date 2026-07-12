@@ -1,7 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <string_view>
+#include <thread>
+
+#include <opencv2/opencv.hpp>
 
 extern "C"
 {
@@ -14,9 +19,6 @@ extern "C"
 
 #include <QThread>
 #include <QMutex>
-#include <QtConcurrent/QtConcurrent>
-#include <QFuture>
-#include <QThreadPool>
 
 #include "ApiDefs.hpp"
 #include "ConfigDate.h"
@@ -34,6 +36,7 @@ public:
 
     void setLoginInfo(const std::string_view uid, const std::string_view gameToken);
     void setLoginInfo(const std::string_view uid, const std::string_view gameToken, const std::string& name);
+    void setLoginInfo1(const std::string_view uid, const std::string_view stoken, const std::string_view mid);
     void setServerType(const ServerType servertype);
     void setUrl(const std::string& url, const std::map<std::string, std::string> heard = {});
     auto init() -> bool;
@@ -46,10 +49,20 @@ Q_SIGNALS:
     void loginConfirm(const GameType gameType, bool b);
 
 private:
-    std::mutex mtx;
+    std::mutex mtx;                 // 保护登录/网络回调
+    std::mutex m_frameMtx;          // 保护最新帧槽位
+    std::condition_variable m_frameCv;
+    cv::Mat m_latestFrame;          // 单槽位：只保留最新一帧，旧帧直接被覆盖
+    bool m_hasNewFrame{ false };
+    std::atomic<bool> m_decodeActive{ false }; // 解码线程是否应继续
+    std::thread m_decodeThread;
+
     void LoginOfficial();
     void LoginBH3BiliBili();
     void setStreamHW();
+    void decodeWorker();            // 独立解码线程：持续解"最新帧"
+    void offerFrame(cv::Mat img);   // 把一帧交给解码线程（只保留最新帧）
+    void drainStartupBuffer();      // 连上后快速丢弃 CDN 积压的旧帧，追上直播点再从最新帧解
     std::string streamUrl{};
     std::string m_name;
     ConfigDate* m_config;
@@ -64,7 +77,5 @@ private:
     int videoStreamIndex{ 0 };
     int videoStreamWidth{};
     int videoStreamHeight{};
-    const int threadNumber{ 2 };
-    QThreadPool threadPool;
     std::atomic<bool> m_stop;
 };

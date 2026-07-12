@@ -1,13 +1,11 @@
-﻿set(FFMPEG_URL "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip")
-set(FFMPEG_ARCHIVE "ffmpeg.zip")
-set(FFMPEG_DIR "${CMAKE_BINARY_DIR}/ffmpeg-master-latest-win64-gpl-shared")
+﻿# --- 本地化 FFmpeg 配置 (不再自动下载) ---
 
-set(FFMPEG_ARCHIVE "${CMAKE_BINARY_DIR}/${FFMPEG_ARCHIVE}")
+# 自动指向项目下的 3rdparty 文件夹
+set(FFMPEG_DIR "${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg-master-latest-win64-gpl-shared")
 
+# 检查文件夹是否存在
 if(NOT EXISTS ${FFMPEG_DIR})
-	message(STATUS "Downloading FFmpeg...")
-	file(DOWNLOAD ${FFMPEG_URL} ${FFMPEG_ARCHIVE} SHOW_PROGRESS)
-	file(ARCHIVE_EXTRACT INPUT ${FFMPEG_ARCHIVE} DESTINATION "${CMAKE_BINARY_DIR}")
+    message(FATAL_ERROR "找不到本地的 FFmpeg 文件夹！请确认是否已解压到: ${FFMPEG_DIR}")
 endif()
 
 set(FFMPEG_LIBS
